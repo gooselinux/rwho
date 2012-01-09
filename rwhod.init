@@ -1,0 +1,99 @@
+#! /bin/sh
+#
+# chkconfig: - 60 20
+# description: The rwho protocol lets remote users get a list of all of \
+#              the users logged into a machine running the rwho daemon \
+#              (similiar to finger).
+# processname: rwhod
+
+### BEGIN INIT INFO
+# Provides: rwhod
+# Required-Start: $syslog $network
+# Required-Stop:  $syslog $network
+# Default-Start:
+# Default-Stop: 0 1 2 3 4 5 6
+# Short-Description: start and stop rwhod
+# Description: The rwho protocol lets remote users get a list of all of \
+#              the users logged into a machine running the rwho daemon \
+#              (similiar to finger).
+### END INIT INFO
+
+
+# Get config.
+. /etc/sysconfig/network
+
+# Get functions
+. /etc/init.d/functions
+RWHOD=/usr/sbin/rwhod
+RETVAL=0
+
+start() {
+    if [ $UID -ne 0 ] ; then
+        #user had insufficient privilege
+        exit 4
+    fi
+ 	# Check that networking is up.
+    if [ ${NETWORKING} = "no" ] ; then
+	   exit 6
+    fi
+    echo -n $"Starting rwho services: "
+	daemon rwhod
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/rwhod && touch /var/run/rwhod.pid
+    return $RETVAL
+}
+
+stop() {
+    if [ $UID -ne 0 ] ; then
+        #user had insufficient privilege
+        exit 4
+    fi
+	echo -n $"Stopping rwho services: "
+	killproc rwhod
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/rwhod && rm -f /var/run/rwhod
+    return $RETVAL
+}
+
+restart() {
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+ start)
+ 	start
+	;;
+ stop)
+ 	stop
+	;;
+ status)
+ 	status $RWHOD
+    RETVAL=$?
+	;;
+ restart)
+ 	restart
+	;;
+ reload)
+     RETVAL=3
+     ;;
+ force-reload)
+     restart
+     ;;
+ condrestart|try-restart)
+ 	[ -f /var/lock/subsys/rwhod ] && restart || :
+	;;
+ usage)
+    echo $"Usage: $0 {start|stop|status|restart|reload|force-reload}"
+    RETVAL=0
+    ;;
+ *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart|try-restart}"
+	RETVAL=2
+	;;
+esac
+
+exit $RETVAL
